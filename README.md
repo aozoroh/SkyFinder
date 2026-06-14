@@ -11,9 +11,16 @@ SKY adalah alat pemindaian (_scanner_) subdomain dan direktori berbasis Python. 
 - **Auto-Save**: Hasil yang berstatus aktif (`FOUND` & `REDIRECT`) otomatis tersimpan ke dalam file teks khusus.
 - **Tampilan Interaktif**: Tampilan terminal berwarna memanfaatkan _library_ `colorama` lengkap dengan indikator persentase progres.
 
-## 🛠️ Prasyarat & Instalasi
+## 🛠️ Daftar Pustaka (Dependencies) & Instalasi
 
-Pastikan Anda sudah menginstal Python di komputer Anda. Sebelum menjalankan alat ini, instal pustaka (_library_) eksternal yang diperlukan melalui terminal:
+Alat ini dibangun menggunakan kombinasi pustaka bawaan Python dan pustaka pihak ketiga.
+
+### 1. Pustaka Eksternal (Wajib Diinstal)
+
+Anda **wajib** menginstal pustaka berikut melalui terminal sebelum menjalankan program agar tidak terjadi error `ModuleNotFoundError`:
+
+- **`requests`**: Digunakan untuk mengirim permintaan HTTP/HTTPS ke server target.
+- **`colorama`**: Digunakan untuk memberikan warna pada teks output di terminal.
 
 ```bash
 pip install colorama requests
@@ -33,3 +40,13 @@ python index.py google.com
 ## 📝 Catatan Penting
 
 Alat ini dibuat hanya untuk tujuan pendidikan dan pengujian keamanan yang sah (_Authorized Penetration Testing_). Penyalahgunaan alat ini untuk meretas sistem tanpa izin adalah tindakan ilegal.
+
+---
+
+## 💙 Penutup & Dukungan
+
+Terima kasih banyak sudah berkunjung dan menggunakan alat **SKY** ini! Proyek ini dibangun dengan semangat untuk terus belajar dan berbagi di dunia pengembangan perangkat lunak serta keamanan siber.
+
+Jika alat ini bermanfaat untukmu, jangan lupa memberikan **Star (⭐)** pada repositori ini ya! Tetap semangat belajar, terus ngoding, dan mari kita melangkah lebih jauh bersama! 🚀🔥
+
+_Happy Coding & Stay Safe!_ 🌤️💻✨
