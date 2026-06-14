@@ -1,0 +1,24 @@
+# Mengabaikan hasil scanning agar tidak bocor ke publik
+live_subdomains_*.txt
+live_directories_*.txt
+
+# Mengabaikan file wordlist lokal Anda
+subdomains.txt
+wordlist.txt
+
+# Mengabaikan cache python
+__pycache__/
+*.pyc
+
+# Mengabaikan folder virtual environment Anda (Sangat Penting!)
+.venv/
+venv/
+ENV/
+env/
+
+# Menyembunyikan README dari unduhan ZIP orang lain
+README.md export-ignore
+
+# Menyembunyikan konfigurasi git itu sendiri
+.gitignore export-ignore
+.gitattributes export-ignore
