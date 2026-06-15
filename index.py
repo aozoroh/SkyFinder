@@ -3,6 +3,7 @@ import os
 import time
 import requests
 import random
+import argparse 
 from concurrent.futures import ThreadPoolExecutor
 from threading import Lock
 
@@ -34,7 +35,6 @@ USER_AGENTS = [
 
 def show_banner():
     """Menampilkan banner bergaya hacker dengan nama SKY"""
-    # Menggunakan fr""" (Raw String + Formatted) agar bebas dari SyntaxWarning \
     banner = fr"""
 {Fore.CYAN}     ____  _  ____     __
 {Fore.CYAN}    / ___|| |/ /\ \   / /
@@ -47,12 +47,6 @@ def show_banner():
 {Fore.CYAN}  ===========================================
     """
     print(banner)
-
-def input_text():
-    teks_input = ""
-    if len(sys.argv) > 1:
-        teks_input = ' '.join(sys.argv[1:])
-    return teks_input
 
 def save_result(filename, text):
     """Fungsi mengunci dan menulis hasil ke file secara aman dari konflik thread"""
@@ -109,37 +103,25 @@ def check_url(url, output_file):
             
     except requests.RequestException:
         with print_lock:
-            # Memastikan counter tidak melompat melebihi total target jika dihentikan paksa
             if counter < total_urls:
                 counter += 1
         pass
 
-def subfinder(domain_target):
+def subfinder(domain_target, mode):
     global total_urls
     
-    if not domain_target:
-        domain_target = input("Masukkan domain target (contoh: google.com): ")
-        if not domain_target:
-            sys.exit(f"{Fore.RED}Error: Target domain tidak boleh kosong.")
-
+    # Membersihkan nama domain
     domain_target = domain_target.replace("http://", "").replace("https://", "").strip("/")
 
-    print(f"\n{Fore.CYAN}[ PILIHAN MENU ]")
-    print("1. Subdomain Finder")
-    print("2. Domain Directory Info")
-    input_choice = input("Enter your choice: ")
-    
-    if input_choice == '1':
+    # Penentuan file berdasarkan parameter 'mode' dari argparse
+    if mode == 'subdomain':
         filename = 'subdomains.txt'
         menu_name = "subdomain"
         output_file = f"live_subdomains_{domain_target}.txt"
-    elif input_choice == '2':
+    elif mode == 'direktori':
         filename = 'wordlist.txt'
         menu_name = "direktori"
         output_file = f"live_directories_{domain_target}.txt"
-    else:
-        print(f"{Fore.RED}Pilihan tidak valid.")
-        return
 
     try:
         with open(filename, 'r') as file:
@@ -159,34 +141,48 @@ def subfinder(domain_target):
     
     urls = []
     for item in items:
-        if input_choice == '1':
+        if mode == 'subdomain':
             urls.append(f"https://{item}.{domain_target}")
         else:
             urls.append(f"https://{domain_target}/{item}")
 
+    # Menggunakan Executor tanpa blok 'with' agar loop utama bisa menangkap sinyal interrupt
+    executor = ThreadPoolExecutor(max_workers=MAX_THREADS)
+    futures = [executor.submit(check_url, url, output_file) for url in urls]
+    
     try:
-        with ThreadPoolExecutor(max_workers=MAX_THREADS) as executor:
-            futures = [executor.submit(check_url, url, output_file) for url in urls]
-            
-            while True:
-                unfinished = [f for f in futures if not f.done()]
-                if not unfinished:
-                    break
-                try:
-                    time.sleep(0.3)
-                except KeyboardInterrupt:
-                    print(f"\n\n{Fore.RED}[!] Scanning dibatalkan oleh pengguna (Ctrl + C). Keluar dari program...")
-                    os._exit(0)
-                    
-        print(f"\n{Fore.GREEN}[+] Scanning {menu_name} selesai. Hasil tersimpan di {output_file}")
+        while True:
+            unfinished = [f for f in futures if not f.done()]
+            if not unfinished:
+                break
+            time.sleep(0.1) # Durasi tidur kecil agar penangkapan Ctrl+C responsif
             
     except KeyboardInterrupt:
-        print(f"\n\n{Fore.RED}[!] Scanning dibatalkan oleh pengguna (Ctrl + C). Keluar dari program...")
-        os._exit(0)
+        print(f"\n\n{Fore.RED}[!] Scanning dibatalkan oleh pengguna (Ctrl + C). Menghentikan semua proses...")
+        executor.shutdown(wait=False, cancel_futures=True) # Batalkan semua sisa antrean thread
+        os._exit(0) # Tutup paksa seluruh engine Python secara instan di OS Windows
+                    
+    print(f"\n{Fore.GREEN}[+] Scanning {menu_name} selesai. Hasil tersimpan di {output_file}")
             
 if __name__ == "__main__":
     show_banner() # Menampilkan banner visual pertama kali
+    
+    # Inisialisasi parser argparse
+    parser = argparse.ArgumentParser(description="SKY - Web Reconnaissance Tool")
+    
+    # Registrasi argumen terminal
+    parser.add_argument("target", help="Domain target scanner (contoh: google.com)")
+    parser.add_argument(
+        "--mode", "-m", 
+        choices=["subdomain", "direktori"], 
+        required=True, 
+        help="Pilih mode scanning: 'subdomain' atau 'direktori'"
+    )
+    
+    # Mengambil nilai input dari user
+    args = parser.parse_args()
+    
     try:
-        subfinder(input_text())
+        subfinder(args.target, args.mode)
     except KeyboardInterrupt:
         os._exit(0)
