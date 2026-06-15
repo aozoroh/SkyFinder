@@ -16,7 +16,7 @@ except ImportError:
     sys.exit(1)
 
 # Pengaturan performa thread
-MAX_THREADS = 3 
+
 
 # Variabel global untuk menghitung persentase progress
 counter = 0
@@ -42,7 +42,7 @@ def show_banner():
 {Fore.BLUE}     ___) | . \   \ V /  
 {Fore.GREEN}    |____/|_|\_\   |_|   
 {Fore.CYAN}  ===========================================
-{Fore.GREEN}   [+] SKY - Web Reconnaissance & Tool v1.0
+{Fore.GREEN}   [+] SKY - Web Reconnaissance & Tool v1.1
 {Fore.GREEN}   [+] Stealth Mode: ACTIVE (Delay & Random UA)
 {Fore.CYAN}  ===========================================
     """
@@ -181,10 +181,18 @@ if __name__ == "__main__":
         required=True, 
         help="Pilih mode scanning: 'subdomain' atau 'direktori'"
     )
+    parser.add_argument(
+        "--threads", "-t", 
+        type=int, 
+        default=3, 
+        help=f"Jumlah thread"
+    )
     
     # Mengambil nilai input dari user
     args = parser.parse_args()
     
+    MAX_THREADS = args.threads
+
     try:
         subfinder(args.target, args.mode)
     except KeyboardInterrupt:
