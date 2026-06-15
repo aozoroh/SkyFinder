@@ -157,6 +157,9 @@ def subfinder(domain_target, mode):
                 break
             time.sleep(0.1) # Durasi tidur kecil agar penangkapan Ctrl+C responsif
             
+        # PERBAIKAN DI SINI: Tutup executor secara normal jika pemindaian selesai sukses
+        executor.shutdown(wait=True)
+            
     except KeyboardInterrupt:
         print(f"\n\n{Fore.RED}[!] Scanning dibatalkan oleh pengguna (Ctrl + C). Menghentikan semua proses...")
         executor.shutdown(wait=False, cancel_futures=True) # Batalkan semua sisa antrean thread
