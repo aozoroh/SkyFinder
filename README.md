@@ -1,4 +1,4 @@
-# SKY - Web Reconnaissance & Tool v1.0
+# SKY - Web Reconnaissance & Tool v1.1
 
 SKY adalah alat pemindaian (_scanner_) subdomain dan direktori berbasis Python. Alat ini dirancang khusus menggunakan teknik _Multi-Threading_ untuk kecepatan optimal, serta dilengkapi dengan _Stealth Mode_ (jeda waktu acak dan rotasi _User-Agent_) guna meminimalisir risiko pemblokiran oleh Firewall web (WAF/Cloudflare).
 
