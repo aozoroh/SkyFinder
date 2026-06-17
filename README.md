@@ -1,52 +1,71 @@
-# SKY - Web Reconnaissance & Tool v1.1
+# SKY - Web Reconnaissance & Tool v1.3
 
-SKY adalah alat pemindaian (_scanner_) subdomain dan direktori berbasis Python. Alat ini dirancang khusus menggunakan teknik _Multi-Threading_ untuk kecepatan optimal, serta dilengkapi dengan _Stealth Mode_ (jeda waktu acak dan rotasi _User-Agent_) guna meminimalisir risiko pemblokiran oleh Firewall web (WAF/Cloudflare).
+SKY adalah alat pemindaian (_scanner_) subdomain dan direktori berbasis Python yang tangguh dan ringan. Alat ini dirancang menggunakan arsitektur _Multi-Threading_ murni untuk kecepatan eksekusi tinggi, serta dilengkapi dengan kendali _Stealth Mode_ yang dinamis dan fitur filtrasi output untuk kenyamanan proses pengintaian siber (_recon_).
 
-## ✨ Fitur Utama
+## ✨ Fitur Utama (v1.3)
 
-- **Subdomain Finder**: Mencari subdomain aktif dari domain target.
-- **Directory Scanner**: Memindai direktori sensitif atau jalur (_path_) tersembunyi pada web.
-- **Stealth Mode**: Menggunakan jeda waktu dinamis (1.5 - 4.0 detik) dan mendistribusikan identitas peramban (_User-Agent_) acak pada setiap permintaan.
-- **Multi-Threading Aman**: Menggunakan `ThreadPoolExecutor` yang dibatasi (`MAX_THREADS = 3`) agar performa tetap cepat namun tidak memicu DDoS.
-- **Auto-Save**: Hasil yang berstatus aktif (`FOUND` & `REDIRECT`) otomatis tersimpan ke dalam file teks khusus.
-- **Tampilan Interaktif**: Tampilan terminal berwarna memanfaatkan _library_ `colorama` lengkap dengan indikator persentase progres.
+- **Subdomain Finder**: Melacak keberadaan subdomain aktif dari domain target yang Anda tuju.
+- **Directory Scanner**: Memindai jalur sensitif atau direktori tersembunyi pada struktur web target.
+- **High-Speed Spawning**: Sistem pengiriman tugas _thread_ yang optimal tanpa adanya hambatan sumbatan antrean (*bottleneck*).
+- **Stealth Mode (Anti-WAF)**: Fitur penyamaran pintar berupa rotasi identitas peramban (_User-Agent acak_) dan jeda waktu dasar dinamis untuk mengelabui deteksi firewall.
+- **Advanced Status Code Filter**: Menyembunyikan status respon tertentu (misal: `404` atau `403`) agar layar terminal Anda tetap bersih dan hanya fokus pada data penting.
+- **Precision Progress Bar**: Indikator persentase kemajuan yang tetap akurat dan sinkron meskipun ada ribuan status kode yang Anda filter di latar belakang.
+- **Clean Run**: Menampilkan hasil langsung ke layar terminal tanpa membuat file log otomatis yang mengotori direktori Anda.
 
-## 🛠️ Daftar Pustaka (Dependencies) & Instalasi
+## 🛠️ Persyaratan & Instalasi
 
-Alat ini dibangun menggunakan kombinasi pustaka bawaan Python dan pustaka pihak ketiga.
+Alat ini membutuhkan **Python 3.x** dan beberapa pustaka pihak ketiga agar dapat menampilkan visual warna yang interaktif.
 
-### 1. Pustaka Eksternal (Wajib Diinstal)
-
-Anda **wajib** menginstal pustaka berikut melalui terminal sebelum menjalankan program agar tidak terjadi error `ModuleNotFoundError`:
-
-- **`requests`**: Digunakan untuk mengirim permintaan HTTP/HTTPS ke server target.
-- **`colorama`**: Digunakan untuk memberikan warna pada teks output di terminal.
+### Instalasi Dependensi
+Jalankan perintah berikut di terminal Anda untuk menginstal pustaka yang dibutuhkan:
 
 ```bash
 pip install colorama requests
 ```
 
-## 🚀 Cara Penggunaan
+## 🚀 Cara Penggunaan & Argumen Terminal
 
-1. Siapkan berkas kata kunci Anda di dalam folder yang sama:
-   - Buat berkas `subdomains.txt` jika ingin mencari subdomain.
-   - Buat berkas `wordlist.txt` jika ingin mencari direktori.
-2. Jalankan skrip melalui terminal atau command prompt dengan menyertakan domain target:
+Anda wajib menyertakan argumen perintah saat menjalankan skrip ini melalui terminal. 
 
-```bash
-python index.py google.com
-```
+### Parameter Perintah:
 
-## 📝 Catatan Penting
+| Argumen | Alias | Deskripsi | Status |
+| :--- | :--- | :--- | :--- |
+| `target` | - | Domain target yang akan dipindai (Contoh: `google.com`) | **Wajib** |
+| `--mode` | `-m` | Pilihan mode pemindaian: `subdomain` atau `direktori` | **Wajib** |
+| `--wordlist` | `-w` | Path/lokasi file teks daftar kata kunci kamus Anda | **Wajib** |
+| `--filter-status`| `-fs`| Menyembunyikan status tertentu dari layar (Contoh: `-fs 404 403`) | Opsional |
+| `--threads` | `-t` | Jumlah pekerja simultan yang berjalan bersamaan (Bawaan: `3`) | Opsional |
+| `--delay` | `-d` | Jeda waktu dasar antar-permintaan dalam detik (Bawaan: `0.5`) | Opsional |
+| `--version` | `-v` | Menampilkan versi skrip saat ini (`v1.3`) | Opsional |
 
-Alat ini dibuat hanya untuk tujuan pendidikan dan pengujian keamanan yang sah (_Authorized Penetration Testing_). Penyalahgunaan alat ini untuk meretas sistem tanpa izin adalah tindakan ilegal.
+### Contoh Perintah Eksekusi:
+
+1. **Memindai Subdomain (Menyembunyikan Status 404):**
+   ```bash
+   python sky_recon.py target_kamu.com -m subdomain -w subdomains.txt -fs 404
+   ```
+
+2. **Memindai Direktori dengan 5 Pekerja Sekaligus:**
+   ```bash
+   python sky_recon.py target_kamu.com -m direktori -w wordlist.txt -t 5
+   ```
+
+3. **Memindai dengan Filter Ganda (Sembunyikan 404 dan 403):**
+   ```bash
+   python sky_recon.py target_kamu.com -m direktori -w wordlist.txt -fs 404 403
+   ```
+
+## 📝 Aturan Penggunaan (Disclaimer)
+
+Alat ini dibuat hanya untuk tujuan edukasi, pembelajaran kode, dan pengujian keamanan yang sah (_Authorized Penetration Testing_). Segala bentuk penyalahgunaan alat ini untuk meretas atau merugikan infrastruktur sistem milik orang lain tanpa izin tertulis adalah tindakan ilegal di mata hukum. Pengembang tidak bertanggung jawab atas segala dampak yang ditimbulkan oleh pengguna.
 
 ---
 
-## 💙 Penutup & Dukungan
+## 💙 Dukungan & Kontribusi
 
-Terima kasih banyak sudah berkunjung dan menggunakan alat **SKY** ini! Proyek ini dibangun dengan semangat untuk terus belajar dan berbagi di dunia pengembangan perangkat lunak serta keamanan siber.
+Terima kasih banyak telah menggunakan alat **SKY v1.3**! Proyek ini terus dikembangkan untuk memberikan performa pengintaian web yang efisien, bersih, dan andal.
 
-Jika alat ini bermanfaat untukmu, jangan lupa memberikan **Star (⭐)** pada repositori ini ya! Tetap semangat belajar, terus ngoding, dan mari kita melangkah lebih jauh bersama! 🚀🔥
+Jika alat ini membantu mempermudah pekerjaan Anda, jangan lupa untuk memberikan **Star (⭐)** pada repositori ini! Tetap konsisten belajar, jaga kode Anda tetap bersih, dan mari melangkah lebih jauh bersama! 🚀🔥
 
-_Happy Coding & Stay Safe!_ 🌤️💻✨
+_Happy Coding, Stay Anonymous, & Stay Safe!_ 🌤️💻✨
