@@ -7,7 +7,6 @@ import argparse
 from concurrent.futures import ThreadPoolExecutor
 from threading import Lock
 
-# --- INTEGRASI WARNA (Colorama) ---
 try:
     from colorama import Fore, Style, init
     init(autoreset=True)
@@ -15,16 +14,10 @@ except ImportError:
     print("[!] Library 'colorama' belum diinstal. Jalankan perintah: pip install colorama")
     sys.exit(1)
 
-# Pengaturan performa thread
-
-
-# Variabel global untuk menghitung persentase progress
 counter = 0
 total_urls = 0
 print_lock = Lock()
-file_lock = Lock()  # Lock tambahan agar penulisan file tidak bertabrakan antar-thread
 
-# Daftar User-Agent variatif
 USER_AGENTS = [
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
@@ -48,18 +41,12 @@ def show_banner():
     """
     print(banner)
 
-def save_result(filename, text):
-    """Fungsi mengunci dan menulis hasil ke file secara aman dari konflik thread"""
-    with file_lock:
-        with open(filename, 'a') as f:
-            f.write(text + "\n")
-
-def check_url(url, output_file):
+def check_url(url):
     """Fungsi mendeteksi status code URL secara aman dengan identitas acak"""
     global counter, total_urls
     
-    # Jeda acak diperlebar sedikit untuk mengacaukan ritme deteksi firewall
-    time.sleep(random.uniform(1.5, 4.0)) 
+    if args.delay > 0:
+        time.sleep(args.delay + random.uniform(0.1, 0.9))
     
     try:
         headers = {
@@ -72,71 +59,60 @@ def check_url(url, output_file):
         response = requests.get(url, timeout=4, allow_redirects=False, headers=headers)
         status = response.status_code
         
-        # --- HITUNG PROGRESS PERSEN & OUTPUT WARNA KUSTOM ---
         with print_lock:
             counter += 1
             percentage = (counter / total_urls) * 100
             progress = f"[{percentage:.1f}%]"
-            
-            # 200 = GREEN
+
+            if args.filter_status and status in args.filter_status:
+                return
+
             if status == 200:
                 print(f"{Fore.GREEN}[+] {progress} FOUND: {url} (Status: {status})")
-                save_result(output_file, f"[FOUND] {url} (Status: {status})")
                 
-            # Menggunakan pengecekan rentang angka eksplisit yang valid
             elif 300 <= status <= 307:
                 loc = response.headers.get('Location', 'Unknown')
                 print(f"{Fore.YELLOW}[!] {progress} REDIRECT: {url} (Status: {status} -> {loc})")
-                save_result(output_file, f"[REDIRECT] {url} (Status: {status} -> {loc})")
                 
-            # 403 = ORANGE
             elif status == 403:
                 print(f"{Style.BRIGHT}{Fore.YELLOW}[-] {progress} FORBIDDEN: {url} (Status: {status}) - Diblokir/WAF Aktif")
                 
-            # 404 = RED
             elif status == 404:
                 print(f"{Fore.RED}[-] {progress} NOT FOUND: {url} (Status: {status})")
             
-            # Kode status lain selain di atas
             else:
                 print(f"{Style.DIM}[?] {progress} OTHER: {url} (Status: {status})")
             
     except requests.RequestException:
         with print_lock:
-            if counter < total_urls:
-                counter += 1
+            counter += 1
         pass
 
 def subfinder(domain_target, mode):
     global total_urls
     
-    # Membersihkan nama domain
+    menu_name = mode.upper()
     domain_target = domain_target.replace("http://", "").replace("https://", "").strip("/")
 
-    # Penentuan file berdasarkan parameter 'mode' dari argparse
-    if mode == 'subdomain':
-        filename = 'subdomains.txt'
-        menu_name = "subdomain"
-        output_file = f"live_subdomains_{domain_target}.txt"
-    elif mode == 'direktori':
-        filename = 'wordlist.txt'
-        menu_name = "direktori"
-        output_file = f"live_directories_{domain_target}.txt"
-
-    try:
-        with open(filename, 'r') as file:
-            items = [line.strip() for line in file if line.strip()]
-    except FileNotFoundError:
-        print(f"{Fore.RED}Error: File '{filename}' tidak ditemukan di folder ini!")
+    if not args.wordlist:
+        print(f"{Fore.RED}Error: Argumen --wordlist atau -w wajib diisi!")
         return
 
+    try:
+        with open(args.wordlist, 'r') as file:
+            items = [line.strip() for line in file if line.strip()]
+    except FileNotFoundError:
+        print(f"{Fore.RED}Error: File '{args.wordlist}' tidak ditemukan di folder ini!")
+        return
+        
     total_urls = len(items)
     if total_urls == 0:
-        print(f"{Fore.RED}Error: File '{filename}' kosong.")
+        print(f"{Fore.RED}Error: File '{args.wordlist}' kosong.")
         return
 
     print(f"\n{Fore.BLUE}[+] Memulai scanning {menu_name} pada: {domain_target} (Total: {total_urls} target)")
-    print(f"{Fore.MAGENTA}[+] Hasil aktif akan otomatis disimpan ke: {output_file}")
+    if args.filter_status:
+        print(f"{Fore.MAGENTA}[+] Menyembunyikan status kode: {', '.join(map(str, args.filter_status))}")
     print(f"{Fore.YELLOW}[!] Tekan Ctrl + C untuk membatalkan.")
     
     urls = []
@@ -146,50 +122,82 @@ def subfinder(domain_target, mode):
         else:
             urls.append(f"https://{domain_target}/{item}")
 
-    # Menggunakan Executor tanpa blok 'with' agar loop utama bisa menangkap sinyal interrupt
     executor = ThreadPoolExecutor(max_workers=MAX_THREADS)
-    futures = [executor.submit(check_url, url, output_file) for url in urls]
     
     try:
+        futures = [executor.submit(check_url, url) for url in urls]
+
         while True:
             unfinished = [f for f in futures if not f.done()]
             if not unfinished:
                 break
-            time.sleep(0.1) # Durasi tidur kecil agar penangkapan Ctrl+C responsif
+            time.sleep(0.1)
             
-        # PERBAIKAN DI SINI: Tutup executor secara normal jika pemindaian selesai sukses
         executor.shutdown(wait=True)
             
     except KeyboardInterrupt:
         print(f"\n\n{Fore.RED}[!] Scanning dibatalkan oleh pengguna (Ctrl + C). Menghentikan semua proses...")
-        executor.shutdown(wait=False, cancel_futures=True) # Batalkan semua sisa antrean thread
-        os._exit(0) # Tutup paksa seluruh engine Python secara instan di OS Windows
+        executor.shutdown(wait=False, cancel_futures=True) 
+        os._exit(0) 
                     
-    print(f"\n{Fore.GREEN}[+] Scanning {menu_name} selesai. Hasil tersimpan di {output_file}")
+    print(f"\n{Fore.GREEN}[+] Scanning {menu_name} selesai.")
             
 if __name__ == "__main__":
-    show_banner() # Menampilkan banner visual pertama kali
     
-    # Inisialisasi parser argparse
     parser = argparse.ArgumentParser(description="SKY - Web Reconnaissance Tool")
-    
-    # Registrasi argumen terminal
-    parser.add_argument("target", help="Domain target scanner (contoh: google.com)")
+
+    parser.add_argument(
+        "target", 
+        help="Domain target scanner (contoh: google.com)"
+    )
+
+    parser.add_argument(
+        "--filter-status", "-fs",
+        nargs="+",
+        type=int,
+        help="Sembunyikan status codes tertentu dari layar (contoh: -fs 404 403)"
+    )
+
+    parser.add_argument(
+        "--delay", "-d", 
+        type=float, 
+        default=0.5, 
+        help="Jeda waktu dasar per pekerjaan untuk menghindari deteksi firewall"
+    )
+
+    parser.add_argument(
+        "--version", "-v", 
+        action="version", 
+        version="v1.1"
+    )
+
+    parser.add_argument(
+        "--wordlist", "-w",
+        required=True, 
+        help="Path to wordlist file"
+    )
+
     parser.add_argument(
         "--mode", "-m", 
         choices=["subdomain", "direktori"], 
-        required=True, 
+        required=True,  
         help="Pilih mode scanning: 'subdomain' atau 'direktori'"
     )
+
     parser.add_argument(
         "--threads", "-t", 
         type=int, 
         default=3, 
-        help=f"Jumlah thread"
+        help="Jumlah thread pekerja simultan"
     )
-    
-    # Mengambil nilai input dari user
+
     args = parser.parse_args()
+
+
+    if not args.target:
+        sys.exit(1)
+    else:
+        show_banner()
     
     MAX_THREADS = args.threads
 

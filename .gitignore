@@ -1,7 +1,3 @@
-# Mengabaikan hasil scanning agar tidak bocor ke publik
-live_subdomains_*.txt
-live_directories_*.txt
-
 # Mengabaikan file wordlist lokal Anda
 subdomains.txt
 wordlist.txt
