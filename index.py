@@ -35,7 +35,7 @@ def show_banner():
 {Fore.BLUE}     ___) | . \   \ V /  
 {Fore.GREEN}    |____/|_|\_\   |_|   
 {Fore.CYAN}  ===========================================
-{Fore.GREEN}   [+] SKY - Web Reconnaissance & Tool v1.1
+{Fore.GREEN}   [+] SKY - Web Reconnaissance & Tool v1.3
 {Fore.GREEN}   [+] Stealth Mode: ACTIVE (Delay & Random UA)
 {Fore.CYAN}  ===========================================
     """
@@ -168,7 +168,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--version", "-v", 
         action="version", 
-        version="v1.1"
+        version="v1.3"
     )
 
     parser.add_argument(
